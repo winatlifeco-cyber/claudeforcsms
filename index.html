@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude for CSMs · A Guided Tour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #0E3B2C;
+    --green-soft: #144838;
+    --green-deep: #0A2A1F;
+    --lime: #A8E55C;
+    --lime-deep: #7FB83E;
+    --ink: #1A1D26;
+    --paper: #FAFAF7;
+    --paper-warm: #F3F1EC;
+    --line: #E8E4DB;
+    --muted: #5C5E6A;
+    --glow: rgba(168, 229, 92, 0.18);
+    --navy: var(--green);
+    --navy-soft: var(--green-soft);
+    --navy-deep: var(--green-deep);
+    --accent: var(--lime);
+    --accent-deep: var(--lime-deep);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--paper); color: var(--ink);
+    line-height: 1.6; font-size: 16px;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  .shell { max-width: 1180px; margin: 0 auto; padding: 0 40px; }
+
+  .topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250, 250, 247, 0.92);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topnav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 40px; max-width: 1180px; margin: 0 auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600;
+    color: var(--navy);
+  }
+  .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  .nav-links { display: flex; gap: 22px; font-size: 13px; color: var(--muted); }
+  .nav-links a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--navy); }
+  @media (max-width: 900px) { .nav-links { display: none; } }
+
+  .hero {
+    background: var(--navy-deep); color: white;
+    padding: 120px 0 140px; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ""; position: absolute; top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-kicker {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 24px;
+    padding-left: 14px; border-left: 2px solid var(--accent);
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif; font-size: clamp(42px, 7vw, 84px);
+    font-weight: 400; line-height: 1.02; letter-spacing: -0.02em;
+    margin-bottom: 30px; max-width: 900px;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); font-weight: 300; }
+  .hero-sub {
+    font-size: 19px; line-height: 1.55; color: rgba(255,255,255,0.72);
+    max-width: 640px; margin-bottom: 48px; font-weight: 300;
+  }
+  .hero-meta { display: flex; gap: 32px; flex-wrap: wrap; font-size: 13px; color: rgba(255,255,255,0.55); }
+  .hero-meta span strong { color: white; font-weight: 500; display: block; margin-bottom: 2px; font-size: 14px; }
+  .scroll-hint {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.4); font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+    animation: bob 2.4s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+    50% { transform: translateX(-50%) translateY(8px); opacity: 0.8; }
+  }
+
+  section.chapter { padding: 120px 0; border-bottom: 1px solid var(--line); }
+  .chapter-head {
+    display: grid; grid-template-columns: 140px 1fr;
+    gap: 40px; margin-bottom: 72px;
+  }
+  @media (max-width: 760px) { .chapter-head { grid-template-columns: 1fr; gap: 20px; } }
+  .chapter-number {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 56px; font-weight: 300; color: var(--accent-deep); line-height: 1;
+  }
+  .chapter-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .chapter-title {
+    font-family: 'Fraunces', serif; font-size: clamp(32px, 4.5vw, 48px);
+    font-weight: 400; line-height: 1.08; letter-spacing: -0.015em;
+    color: var(--navy); margin-bottom: 20px;
+  }
+  .chapter-title em { font-style: italic; color: var(--accent-deep); }
+  .chapter-lede { font-size: 18px; line-height: 1.55; color: var(--muted); max-width: 700px; }
+
+  /* Sidebar accordion */
+  .feature-stack { display: flex; flex-direction: column; gap: 16px; }
+  .feature {
+    background: white; border: 1px solid var(--line);
+    border-radius: 4px; overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .feature.open {
+    border-color: var(--accent-deep);
+    box-shadow: 0 4px 24px rgba(14, 59, 44, 0.08);
+  }
+  .feature-head {
+    display: grid; grid-template-columns: 50px 60px 1fr auto;
+    gap: 20px; align-items: center; padding: 24px 28px;
+    cursor: pointer; transition: background 0.2s; user-select: none;
+  }
+  .feature-head:hover { background: var(--paper-warm); }
+  .feature-num {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 26px; color: var(--accent-deep); font-weight: 300; line-height: 1;
+  }
+  .feature-icon {
+    width: 44px; height: 44px; border-radius: 4px; background: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); flex-shrink: 0;
+  }
+  .feature-icon svg { width: 22px; height: 22px; }
+  .feature-title-block { display: flex; flex-direction: column; gap: 4px; }
+  .feature-name {
+    font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500;
+    color: var(--navy); letter-spacing: -0.01em;
+  }
+  .feature-sub { font-size: 13px; color: var(--muted); }
+  .feature-toggle {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase;
+  }
+  .feature-toggle::after {
+    content: "+"; font-size: 20px; width: 24px; height: 24px;
+    border: 1px solid var(--line); border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--navy); line-height: 1;
+    transition: transform 0.3s, background 0.3s, color 0.3s, border-color 0.3s;
+  }
+  .feature.open .feature-toggle::after {
+    content: "−"; background: var(--accent);
+    color: var(--navy-deep); border-color: var(--accent);
+  }
+  .feature-body { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .feature.open .feature-body { max-height: 1600px; }
+  .feature-body-inner {
+    padding: 8px 28px 36px 158px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+  }
+  @media (max-width: 860px) {
+    .feature-body-inner { padding: 8px 28px 32px 28px; grid-template-columns: 1fr; gap: 28px; }
+  }
+  .feature-section h4 {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.22em; color: var(--accent-deep); text-transform: uppercase;
+    margin-bottom: 12px; font-weight: 500;
+  }
+  .feature-section p { font-size: 15px; line-height: 1.6; color: var(--ink); }
+  .feature-section p + p { margin-top: 10px; }
+  .feature-cases { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+  .feature-cases li {
+    padding-left: 22px; position: relative;
+    font-size: 14.5px; line-height: 1.55; color: var(--ink);
+  }
+  .feature-cases li::before {
+    content: ""; position: absolute; left: 0; top: 9px;
+    width: 8px; height: 2px; background: var(--accent-deep);
+  }
+  .feature-cases strong { color: var(--navy); font-weight: 600; }
+  .prompt {
+    margin-top: 20px; background: var(--navy-deep);
+    color: rgba(255,255,255,0.92); padding: 20px 22px;
+    border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; line-height: 1.65; position: relative;
+    border-left: 3px solid var(--accent);
+  }
+  .prompt::before {
+    content: "TRY THIS"; position: absolute; top: -9px; left: 16px;
+    background: var(--accent); color: var(--navy-deep);
+    font-size: 9px; letter-spacing: 0.18em; font-weight: 700;
+    padding: 3px 8px; border-radius: 2px; font-family: 'Inter', sans-serif;
+  }
+  .prompt em { color: var(--accent); font-style: normal; }
+
+  /* Pull quote */
+  .pullquote {
+    background: var(--navy); color: white; padding: 70px 40px;
+    text-align: center; border-radius: 4px; margin: 50px 0;
+  }
+  .pullquote p {
+    font-family: 'Fraunces', serif; font-size: clamp(22px, 3vw, 32px);
+    font-weight: 400; line-height: 1.3; font-style: italic;
+    max-width: 820px; margin: 0 auto;
+  }
+  .pullquote .q-mark { color: var(--accent); font-weight: 500; }
+
+  /* Pipeline */
+  /* Prompting framework */
+  .framework {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
+    background: var(--line); border: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  @media (max-width: 860px) { .framework { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .framework { grid-template-columns: 1fr; } }
+  .framework-piece {
+    background: white; padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: background 0.2s; min-height: 180px;
+  }
+  .framework-piece:hover { background: var(--paper-warm); }
+  .framework-letter {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 42px; font-weight: 300;
+    color: var(--accent-deep); line-height: 1;
+  }
+  .framework-name {
+    font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500;
+    color: var(--navy); letter-spacing: -0.01em;
+  }
+  .framework-desc { font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+
+  /* Before/after prompt compare */
+  .compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+    background: var(--line); border: 1px solid var(--line);
+    margin: 40px 0;
+  }
+  @media (max-width: 720px) { .compare { grid-template-columns: 1fr; } }
+  .compare-side { background: white; padding: 28px 30px; }
+  .compare-side.weak { background: var(--paper-warm); }
+  .compare-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 14px; font-weight: 600;
+  }
+  .compare-side.weak .compare-label { color: var(--muted); }
+  .compare-side.strong .compare-label { color: var(--accent-deep); }
+  .compare-content {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; line-height: 1.65;
+  }
+  .compare-side.weak .compare-content { color: var(--muted); }
+  .compare-side.strong .compare-content { color: var(--ink); }
+
+  /* Prompt library */
+  .prompt-library {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .prompt-card {
+    background: white; border: 1px solid var(--line);
+    border-radius: 4px; padding: 28px 32px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .prompt-card:hover {
+    border-color: var(--accent-deep);
+    box-shadow: 0 2px 16px rgba(14, 59, 44, 0.05);
+  }
+  .prompt-card-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 14px; gap: 20px; flex-wrap: wrap;
+  }
+  .prompt-card-title {
+    font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500;
+    color: var(--navy); letter-spacing: -0.01em;
+  }
+  .prompt-card-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.18em; color: var(--accent-deep);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .prompt-card-body {
+    background: var(--navy-deep); color: rgba(255,255,255,0.92);
+    padding: 20px 22px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; line-height: 1.7;
+    border-left: 3px solid var(--accent);
+    white-space: pre-wrap;
+  }
+  .prompt-card-body em {
+    color: var(--accent); font-style: normal;
+  }
+  .prompt-card-note {
+    margin-top: 14px; font-size: 13px; color: var(--muted);
+    font-style: italic; font-family: 'Fraunces', serif;
+  }
+
+  /* Shipped callout */
+  .shipped-callout {
+    background: var(--navy); color: white;
+    padding: 36px 40px; border-radius: 4px;
+    margin: 40px 0; display: grid;
+    grid-template-columns: auto 1fr; gap: 28px; align-items: center;
+  }
+  @media (max-width: 720px) { .shipped-callout { grid-template-columns: 1fr; gap: 16px; padding: 28px 24px; } }
+  .shipped-icon {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 72px; color: var(--accent); line-height: 1; font-weight: 300;
+  }
+  .shipped-text h4 {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.22em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 10px; font-weight: 600;
+  }
+  .shipped-text p {
+    font-family: 'Fraunces', serif; font-size: 19px;
+    line-height: 1.45; color: white; font-weight: 400;
+  }
+  .shipped-text p em { color: var(--accent); font-style: italic; }
+
+  /* Beyond the sidebar - two-up product cards */
+  .beyond-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  }
+  @media (max-width: 820px) { .beyond-grid { grid-template-columns: 1fr; } }
+  .beyond-card {
+    background: white; border: 1px solid var(--line); border-radius: 4px;
+    padding: 36px 34px; display: flex; flex-direction: column; gap: 18px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .beyond-card:hover {
+    border-color: var(--accent-deep);
+    box-shadow: 0 4px 24px rgba(14, 59, 44, 0.06);
+  }
+  .beyond-header { display: flex; align-items: center; gap: 14px; }
+  .beyond-icon {
+    width: 44px; height: 44px; border-radius: 4px; background: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); flex-shrink: 0;
+  }
+  .beyond-icon svg { width: 22px; height: 22px; }
+  .beyond-title-block { display: flex; flex-direction: column; gap: 4px; }
+  .beyond-name {
+    font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500;
+    color: var(--navy); letter-spacing: -0.01em; line-height: 1.1;
+  }
+  .beyond-status {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    letter-spacing: 0.2em; color: var(--accent-deep);
+    text-transform: uppercase; font-weight: 600;
+  }
+  .beyond-body { font-size: 14.5px; line-height: 1.6; color: var(--ink); }
+  .beyond-body p + p { margin-top: 10px; }
+  .beyond-use {
+    padding: 14px 18px; background: var(--paper-warm); border-radius: 3px;
+    font-size: 13px; line-height: 1.55; color: var(--ink);
+    border-left: 3px solid var(--accent-deep);
+  }
+  .beyond-use strong {
+    display: block; font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.2em; color: var(--accent-deep);
+    text-transform: uppercase; margin-bottom: 6px; font-weight: 600;
+  }
+
+  /* Privacy note callout */
+  .privacy-note {
+    background: var(--paper-warm); border: 1px solid var(--line);
+    border-left: 4px solid var(--accent-deep); border-radius: 3px;
+    padding: 24px 28px; margin-top: 48px;
+    display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start;
+  }
+  @media (max-width: 720px) { .privacy-note { grid-template-columns: 1fr; gap: 14px; } }
+  .privacy-icon {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--navy);
+    color: var(--accent); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .privacy-icon svg { width: 18px; height: 18px; }
+  .privacy-content h4 {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.22em; color: var(--navy); text-transform: uppercase;
+    margin-bottom: 10px; font-weight: 700;
+  }
+  .privacy-content p {
+    font-size: 14px; line-height: 1.6; color: var(--ink); margin-bottom: 8px;
+  }
+  .privacy-content p:last-child { margin-bottom: 0; }
+  .privacy-content strong { color: var(--navy); font-weight: 600; }
+
+  /* What not to use - warning callout */
+  .warning-block {
+    background: #2A1810; color: rgba(255,255,255,0.92);
+    padding: 40px 44px; border-radius: 4px; margin: 40px 0;
+    border-left: 4px solid #E89A5C;
+  }
+  @media (max-width: 720px) { .warning-block { padding: 32px 28px; } }
+  .warning-kicker {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.22em; color: #E89A5C;
+    text-transform: uppercase; margin-bottom: 14px; font-weight: 700;
+  }
+  .warning-title {
+    font-family: 'Fraunces', serif; font-size: clamp(24px, 3vw, 32px);
+    font-weight: 500; color: white; line-height: 1.2;
+    margin-bottom: 20px; letter-spacing: -0.015em;
+  }
+  .warning-title em { font-style: italic; color: #E89A5C; }
+  .warning-list {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .warning-list li {
+    padding-left: 24px; position: relative;
+    font-size: 14.5px; line-height: 1.55; color: rgba(255,255,255,0.88);
+  }
+  .warning-list li::before {
+    content: "✕"; position: absolute; left: 0; top: 0;
+    color: #E89A5C; font-weight: 600;
+  }
+  .warning-list strong { color: white; font-weight: 600; }
+
+  .pipeline {
+    background: white; border: 1px solid var(--line); border-radius: 4px;
+    padding: 48px 40px; margin-bottom: 40px;
+  }
+  @media (max-width: 720px) { .pipeline { padding: 32px 24px; } }
+  .pipeline-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase;
+    margin-bottom: 32px; text-align: center;
+  }
+  .pipeline-flow {
+    display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+    gap: 12px; align-items: center; margin-bottom: 32px;
+  }
+  @media (max-width: 820px) {
+    .pipeline-flow { grid-template-columns: 1fr; gap: 20px; }
+    .pipeline-arrow { transform: rotate(90deg); justify-self: center; }
+  }
+  .pipeline-node {
+    text-align: center; padding: 24px 16px; background: var(--paper-warm);
+    border-radius: 4px; border-top: 3px solid var(--accent);
+  }
+  .pipeline-node-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.2em; color: var(--accent-deep);
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .pipeline-node-name {
+    font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500;
+    color: var(--navy); margin-bottom: 6px;
+  }
+  .pipeline-node-desc { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+  .pipeline-arrow { color: var(--accent-deep); font-size: 24px; }
+  .pipeline-caption {
+    font-size: 14px; color: var(--muted); font-style: italic;
+    font-family: 'Fraunces', serif; text-align: center;
+    padding-top: 20px; border-top: 1px solid var(--line);
+    max-width: 700px; margin: 0 auto;
+  }
+
+  /* Builder detail */
+  .builder-stack {
+    display: flex; flex-direction: column; gap: 2px;
+    background: var(--line); border: 1px solid var(--line);
+  }
+  .builder {
+    background: white; padding: 32px 36px;
+    display: grid; grid-template-columns: 60px 1fr 1.5fr; gap: 32px;
+    align-items: start; transition: background 0.2s;
+  }
+  .builder:hover { background: var(--paper-warm); }
+  @media (max-width: 720px) {
+    .builder { grid-template-columns: 1fr; gap: 16px; padding: 28px 24px; }
+  }
+  .builder-icon {
+    width: 56px; height: 56px; border-radius: 4px; background: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+  }
+  .builder-icon svg { width: 26px; height: 26px; }
+  .builder-heading { display: flex; flex-direction: column; gap: 8px; }
+  .builder-name {
+    font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500;
+    color: var(--navy); letter-spacing: -0.01em; line-height: 1.1;
+  }
+  .builder-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.18em; color: var(--accent-deep);
+    text-transform: uppercase; font-weight: 500;
+  }
+  .builder-body p { font-size: 14.5px; line-height: 1.6; color: var(--ink); }
+  .builder-body p + p { margin-top: 10px; }
+  .builder-body .analogy {
+    color: var(--muted); font-style: italic;
+    font-family: 'Fraunces', serif; font-size: 15px;
+    padding-top: 10px; margin-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* Tools grid */
+  .tools-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 2px; background: var(--line); border: 1px solid var(--line);
+  }
+  .tool {
+    background: white; padding: 26px 26px 28px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: background 0.2s; min-height: 250px;
+  }
+  .tool:hover { background: var(--paper-warm); }
+  .tool-header { display: flex; align-items: center; gap: 10px; }
+  .tool-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .tool-name {
+    font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500;
+    color: var(--navy); letter-spacing: -0.01em;
+  }
+  .tool-category {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    letter-spacing: 0.2em; color: var(--accent-deep); text-transform: uppercase;
+  }
+  .tool-desc { font-size: 14px; line-height: 1.55; color: var(--ink); flex-grow: 1; }
+  .tool-use {
+    padding-top: 14px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  }
+  .tool-use strong {
+    color: var(--navy); font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    display: block; margin-bottom: 4px; font-weight: 600;
+  }
+
+  /* Glossary */
+  .glossary {
+    display: grid; grid-template-columns: 260px 1fr;
+    background: white; border: 1px solid var(--line); border-radius: 4px;
+    overflow: hidden; min-height: 460px;
+  }
+  @media (max-width: 820px) {
+    .glossary { grid-template-columns: 1fr; }
+  }
+  .glossary-terms {
+    border-right: 1px solid var(--line);
+    padding: 8px 0; overflow-y: auto;
+  }
+  @media (max-width: 820px) {
+    .glossary-terms { border-right: none; border-bottom: 1px solid var(--line); max-height: 280px; }
+  }
+  .term {
+    padding: 14px 24px; cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; color: var(--muted);
+    font-weight: 500; letter-spacing: 0.02em;
+  }
+  .term:hover { background: var(--paper-warm); color: var(--navy); }
+  .term.active {
+    background: var(--paper-warm);
+    border-left-color: var(--accent-deep);
+    color: var(--navy); font-weight: 600;
+  }
+  .glossary-def {
+    padding: 40px 44px; transition: opacity 0.35s, transform 0.35s;
+  }
+  @media (max-width: 820px) { .glossary-def { padding: 32px 28px; } }
+  .def-kicker {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.2em; color: var(--accent-deep);
+    text-transform: uppercase; margin-bottom: 14px;
+  }
+  .def-term {
+    font-family: 'Fraunces', serif; font-size: 34px; font-weight: 500;
+    color: var(--navy); letter-spacing: -0.01em; margin-bottom: 18px;
+    line-height: 1.1;
+  }
+  .def-body { font-size: 15px; line-height: 1.65; color: var(--ink); }
+  .def-body p + p { margin-top: 12px; }
+  .def-body strong { color: var(--navy); font-weight: 600; }
+  .def-body code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--paper-warm); padding: 2px 6px;
+    border-radius: 3px; font-size: 13px; color: var(--navy);
+  }
+  .def-example {
+    margin-top: 16px; padding: 14px 18px;
+    background: var(--navy-deep); color: rgba(255,255,255,0.9);
+    border-left: 3px solid var(--accent); border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 1.6;
+  }
+  .def-example::before {
+    content: "In practice"; display: block;
+    color: var(--accent); font-family: 'Inter', sans-serif;
+    font-size: 9px; letter-spacing: 0.2em; font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  /* Close */
+  .close-section { background: var(--navy-deep); color: white; padding: 120px 0; }
+  .close-section .chapter-title { color: white; }
+  .close-section .chapter-title em { color: var(--accent); }
+  .close-section .chapter-lede { color: rgba(255,255,255,0.7); }
+  .close-section .chapter-number { color: var(--accent); }
+  .todo-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px; margin-top: 48px;
+  }
+  .todo { background: var(--navy-soft); padding: 28px; border-top: 3px solid var(--accent); }
+  .todo-n {
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 36px;
+    color: var(--accent); line-height: 1; margin-bottom: 14px; font-weight: 300;
+  }
+  .todo-title {
+    font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500;
+    color: white; margin-bottom: 8px;
+  }
+  .todo-desc { font-size: 14px; color: rgba(255,255,255,0.68); line-height: 1.55; }
+
+  /* Discussion prompts */
+  .discussion-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    margin-top: 40px; margin-bottom: 80px;
+  }
+  @media (max-width: 720px) { .discussion-grid { grid-template-columns: 1fr; } }
+  .discussion-card {
+    background: var(--navy-soft); padding: 36px 32px;
+    border-radius: 4px; border-left: 3px solid var(--accent);
+    position: relative;
+  }
+  .discussion-kicker {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.2em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .discussion-q {
+    font-family: 'Fraunces', serif; font-size: clamp(22px, 2.4vw, 28px);
+    font-weight: 400; color: white; line-height: 1.25;
+    margin-bottom: 16px; font-style: italic;
+  }
+  .discussion-help {
+    font-size: 13.5px; color: rgba(255,255,255,0.62); line-height: 1.55;
+  }
+
+  /* Challenge */
+  .challenge {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+    color: var(--navy-deep); padding: 60px 48px;
+    border-radius: 4px; margin-top: 80px; position: relative; overflow: hidden;
+  }
+  @media (max-width: 720px) { .challenge { padding: 44px 32px; } }
+  .challenge::before {
+    content: "THE CHALLENGE"; position: absolute; top: 28px; left: 48px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.25em; color: var(--navy-deep); opacity: 0.6;
+    font-weight: 700;
+  }
+  @media (max-width: 720px) { .challenge::before { left: 32px; } }
+  .challenge-title {
+    font-family: 'Fraunces', serif; font-size: clamp(32px, 4.5vw, 44px);
+    font-weight: 500; line-height: 1.1; letter-spacing: -0.015em;
+    margin-top: 28px; margin-bottom: 20px;
+  }
+  .challenge-title em { font-style: italic; }
+  .challenge-body { font-size: 16px; line-height: 1.6; color: var(--navy-deep); max-width: 640px; }
+  .challenge-body p + p { margin-top: 14px; }
+  .challenge-body strong { font-weight: 700; }
+  .challenge-rules {
+    margin-top: 28px; padding-top: 24px;
+    border-top: 1px solid rgba(10, 42, 31, 0.2);
+    display: flex; flex-wrap: wrap; gap: 24px 40px;
+  }
+  .challenge-rule {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 13.5px; color: var(--navy-deep);
+  }
+  .challenge-rule strong {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700;
+  }
+  .footer-meta {
+    margin-top: 80px; padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: rgba(255,255,255,0.4);
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+    flex-wrap: wrap; gap: 12px;
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <div class="brand"><span class="brand-dot"></span>Claude for CSMs</div>
+    <div class="nav-links">
+      <a href="#sidebar">Sidebar</a>
+      <a href="#beyond">Beyond it</a>
+      <a href="#prompting">Prompting</a>
+      <a href="#builder">Builder stack</a>
+      <a href="#jargon">Jargon</a>
+      <a href="#tools">Other AI tools</a>
+      <a href="#close">What's next</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="shell">
+    <span class="hero-kicker">Part 1 · The Landscape</span>
+    <h1>Every button <em>in your sidebar</em>, explained.</h1>
+    <p class="hero-sub">A walkthrough of the nine features in your Claude sidebar, the builder's stack beyond it, and the other AI tools worth knowing. Built for CS teams who'd rather ship than scroll.</p>
+    <div class="hero-meta">
+      <span><strong>40 minutes</strong>Reading time</span>
+      <span><strong>9 sidebar items</strong>All covered</span>
+      <span><strong>9 AI tools</strong>In the landscape</span>
+      <span><strong>Juan Correa</strong>Head of Customer Success</span>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll to begin</div>
+</header>
+
+<!-- ============ CHAPTER 1: SIDEBAR ============ -->
+<section class="chapter" id="sidebar">
+  <div class="shell">
+    <div class="chapter-head reveal">
+      <div class="chapter-number">01</div>
+      <div>
+        <div class="chapter-label">Chapter one · Your sidebar, top to bottom</div>
+        <h2 class="chapter-title">Nine features, <em>in order.</em></h2>
+        <p class="chapter-lede">Nine items, top to bottom, in the order they appear in your app. What each one does, why it matters, and a CSM use case for every single one.</p>
+      </div>
+    </div>
+
+    <div class="feature-stack reveal">
+
+      <!-- 1. NEW CHAT -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">01</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">New chat</div>
+            <div class="feature-sub">Start a fresh conversation with Claude</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>A blank chat. No memory of other conversations, no inherited context. A fresh slate every time you click it.</p>
+              <p>Think of it as opening a new Word document, not a continuation.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>One-off questions.</strong> "Rewrite this email to sound less corporate." Start a new chat, do it, move on.</li>
+                <li><strong>Keep contexts separate.</strong> Don't mix a client escalation with a commissions question. Two different tasks, two different chats.</li>
+                <li><strong>Public-sensitive work.</strong> Drafting a sensitive internal message? New chat, no prior context bleeding in.</li>
+              </ul>
+              <div class="prompt">
+<em>Try this:</em> Think of one throwaway question you asked Claude this week that was genuinely useful. That's the bar. Most "wins" with AI are small, repeated thousands of times.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. SEARCH -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">02</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Search</div>
+            <div class="feature-sub">Find anything across every chat you've ever had</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>A search bar that looks across all your past chats. Type a keyword, get a list of every conversation that mentioned it.</p>
+              <p>Claude's memory doesn't work automatically across chats, but search lets you find the chat you need in seconds.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>Find past drafts.</strong> "What did I write to that client about their contract renewal last month?" Search the client name and open the chat.</li>
+                <li><strong>Reuse winning language.</strong> You wrote a great pushback email three months ago. Search for the client name, find it, adapt it.</li>
+                <li><strong>Audit your own work.</strong> Review past conversations before a difficult call to see what you've promised or said.</li>
+              </ul>
+              <div class="prompt">
+Search works on the content of chats, not just titles. Type a phrase you remember saying and Claude finds it.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. CUSTOMIZE -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">03</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Customize</div>
+            <div class="feature-sub">Shape how Claude works with Skills and Connectors</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>The control center for <strong>Skills</strong> and <strong>Connectors</strong>. As the page itself puts it: "skills, connectors, and plugins shape how Claude works with you."</p>
+              <p><strong>Connectors</strong> let Claude read and write to the tools you already use. <strong>Skills</strong> teach Claude your processes, team norms, and expertise. Both live here.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>Connect your apps.</strong> Gmail, Google Calendar, Drive, HubSpot, your data tools. Turn on what you use, turn off what you don't.</li>
+                <li><strong>Teach Claude a process.</strong> Create a Skill for "Write a QBR summary in our house style." Once taught, Claude applies it every time you ask.</li>
+                <li><strong>Codify team norms.</strong> A Skill like "Handle a churn risk" can encode the exact playbook every CSM should follow. Consistent quality, at scale.</li>
+              </ul>
+              <div class="prompt">
+Click <em>Customize</em>, then <em>Create new skills</em>. Teach Claude one thing you do weekly: a QBR format, a pushback structure, the way you handle a late payment.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. CHATS -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">04</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Chats</div>
+            <div class="feature-sub">Your full conversation history</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>Every chat you've ever had, listed. Rename the useful ones, delete the throwaways.</p>
+              <p>Reopening a chat gives Claude the full memory of that conversation. Pick up exactly where you left off, even weeks later.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>Name chats like you'd name emails.</strong> "Q2 escalation prep," "Renewal notes," "April QBR prep." Future-you will thank past-you.</li>
+                <li><strong>Keep long-running threads alive.</strong> A chat about a specific account can run for weeks. Claude remembers everything in it.</li>
+                <li><strong>Prune regularly.</strong> Delete old throwaway chats. Makes Search sharper.</li>
+              </ul>
+              <div class="prompt">
+<em>Try this:</em> Scroll through your chat history for a second. Find one chat that ended up being more useful than you expected. What made it work? That pattern is worth repeating.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. PROJECTS -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">05</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Projects</div>
+            <div class="feature-sub">Folders with persistent instructions and knowledge</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>A folder with two superpowers: <strong>project instructions</strong> (standing rules Claude follows in every chat) and <strong>project knowledge</strong> (documents Claude can reference).</p>
+              <p>Every chat you start inside a project inherits both. Build the context once, reuse it forever.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>A "My CSM" project.</strong> Instructions cover your tone and process. Knowledge holds the pushback playbook, the QBR template, the onboarding guide.</li>
+                <li><strong>Per-account projects.</strong> One project per strategic account, with their contract terms, meeting notes, and recent tickets loaded. Start any chat inside it and Claude is instantly up to speed.</li>
+                <li><strong>Shared team projects.</strong> One project every CSM uses. When you update it, everyone benefits.</li>
+              </ul>
+              <div class="prompt">
+In a project, write clear instructions: <em>"Always use direct, accountable language. Never hedge. When drafting client emails, keep them under 150 words unless I say otherwise."</em>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. ENTERPRISE KNOWLEDGE -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">06</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Enterprise knowledge</div>
+            <div class="feature-sub">Your company's collective wisdom, in one question</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>On Enterprise plans, Claude can be wired into your company's internal knowledge. One question gets searched across Gmail, Drive, Microsoft 365, Asana, Notion, Confluence, and whatever else your team lives in.</p>
+              <p>Different platforms call it different things. The shape is always the same: you ask once, it searches everywhere, and the answer cites the source.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>Policy and process questions.</strong> "What's our standard position on backdating offboardings?" It searches Confluence, past Slack decisions, shared Drive docs, all in one query.</li>
+                <li><strong>Historical context.</strong> "Has any team talked to this client's parent company before?" Instead of asking five people, ask once.</li>
+                <li><strong>Cross-team answers.</strong> "What does Ops usually do when FX controls block a payment?" You get the answer without chasing down the right Slack channel.</li>
+              </ul>
+              <div class="prompt">
+Treat it as the first stop before you ask a human. If you were about to DM someone, ask the enterprise tool first. It often already knows.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. ARTIFACTS -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">07</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Artifacts</div>
+            <div class="feature-sub">Files and mini-apps Claude generates</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>When Claude creates something substantial (a document, a chart, a working app), it goes into an artifact: a dedicated panel next to the chat. The Artifacts tab in the sidebar collects all of yours in one place.</p>
+              <p>You can edit them in real time by chatting, publish them as links, and remix the ones other people share.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>Client-ready one-pagers.</strong> "Turn this data into a one-page client summary." Get a polished artifact, tweak the wording, send it.</li>
+                <li><strong>Interactive dashboards.</strong> A renewal tracker, an FX calculator, a churn visualizer. Publish the link and share with your team.</li>
+                <li><strong>Reusable templates.</strong> Build an artifact once (a QBR structure, a pricing proposal layout). Remix it for every client.</li>
+              </ul>
+              <div class="prompt">
+<em>"Build me a simple web dashboard showing my top 10 accounts by MRR, with renewal dates and a risk flag."</em> Claude generates the app. You iterate by chatting.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. CODE -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">08</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Code</div>
+            <div class="feature-sub">Claude Code, the terminal-based coding agent</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>A shortcut into <strong>Claude Code</strong>, a version of Claude that runs in your terminal and edits files on your computer directly. Different from chat-based Claude: it has real access to your codebase.</p>
+              <p>For CSMs who don't write code: this is the "builders" door. You probably won't open it today. But it's how I've built every internal tool I use.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>Build internal tools.</strong> Churn trackers, QBR generators, commissions calculators. If you can describe it, Claude Code can build it.</li>
+                <li><strong>Automate repetitive data work.</strong> "Read this folder of invoice CSVs and make me a monthly summary." Claude Code does it and saves it.</li>
+                <li><strong>Prototype before asking engineering.</strong> If you need a new internal tool, build a working version first. The ask to Ops becomes way easier.</li>
+              </ul>
+              <div class="prompt">
+You don't need this today. Just know it exists, and that the path from "idea" to "working tool" is shorter than it's ever been.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. DESIGN -->
+      <div class="feature">
+        <div class="feature-head" onclick="toggleFeature(this)">
+          <div class="feature-num">09</div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <div class="feature-title-block">
+            <div class="feature-name">Design <span style="background: var(--accent); color: var(--navy-deep); font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 2px; margin-left: 8px; letter-spacing: 0.15em; vertical-align: middle;">NEW</span></div>
+            <div class="feature-sub">Claude Design, visual design with a conversation</div>
+          </div>
+          <div class="feature-toggle"></div>
+        </div>
+        <div class="feature-body">
+          <div class="feature-body-inner">
+            <div class="feature-section">
+              <h4>What it is</h4>
+              <p>A separate Claude tool (at claude.ai/design) where you describe what you want to design and Claude produces it on a visual canvas. Currently in research preview.</p>
+              <p>It can be connected to a design system: your logo, your colors, your typography. Every output comes back on-brand.</p>
+            </div>
+            <div class="feature-section">
+              <h4>CSM use cases</h4>
+              <ul class="feature-cases">
+                <li><strong>Client-ready visuals in minutes.</strong> "Design a one-page overview of our onboarding process." Get a branded layout, export to PDF, send it.</li>
+                <li><strong>Renewal decks.</strong> Describe the story you want to tell. Claude Design lays it out. You iterate by chatting.</li>
+                <li><strong>Internal process visuals.</strong> Org charts, escalation flows, stakeholder maps. Draft them visually instead of wrestling with PowerPoint.</li>
+              </ul>
+              <div class="prompt">
+<em>"Design a 3-slide deck summarizing our Q1 client wins. Use a clean editorial feel. Include space for one headline stat per slide."</em>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHAPTER 2: BEYOND THE SIDEBAR ============ -->
+<section class="chapter" id="beyond">
+  <div class="shell">
+    <div class="chapter-head reveal">
+      <div class="chapter-number">02</div>
+      <div>
+        <div class="chapter-label">Chapter two · Beyond the sidebar</div>
+        <h2 class="chapter-title">Two places Claude lives <em>outside this window.</em></h2>
+        <p class="chapter-lede">Claude isn't just what you see at claude.ai. Two other products belong in your toolkit. Both are built for the kind of work CSMs do every day, and both are underused by most teams.</p>
+      </div>
+    </div>
+
+    <div class="beyond-grid reveal">
+
+      <div class="beyond-card">
+        <div class="beyond-header">
+          <div class="beyond-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="beyond-title-block">
+            <div class="beyond-name">Claude Cowork</div>
+            <div class="beyond-status">Desktop agent · generally available</div>
+          </div>
+        </div>
+        <div class="beyond-body">
+          <p>A desktop app where Claude doesn't just answer questions, it does the work. You give it a goal and access to your files, and it moves between your documents, folders, and apps to deliver a finished result.</p>
+          <p>Connects to Gmail, Google Drive, DocuSign, Zoom, and others. Has scheduled tasks, so you can say "every Friday, pull my metrics and draft the weekly report," and it just happens.</p>
+        </div>
+        <div class="beyond-use">
+          <strong>CSM use case</strong>
+          "Scan my Downloads folder, find everything from this client, organize it by date, and write a one-paragraph summary of what happened this quarter." Cowork will actually do it. Claude chat will tell you how.
+        </div>
+      </div>
+
+      <div class="beyond-card">
+        <div class="beyond-header">
+          <div class="beyond-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+          </div>
+          <div class="beyond-title-block">
+            <div class="beyond-name">Claude in Chrome</div>
+            <div class="beyond-status">Browser extension · beta</div>
+          </div>
+        </div>
+        <div class="beyond-body">
+          <p>Claude in your browser sidebar, able to see the page you're on and take action. Summarize any article, fill forms, extract data from a table, triage email threads, navigate between tabs.</p>
+          <p>Available to all paid subscribers. Pro plans run on Haiku. Max plans get Sonnet and Opus too. Still in beta, so treat it as a tool for low-stakes tasks while it matures.</p>
+        </div>
+        <div class="beyond-use">
+          <strong>CSM use case</strong>
+          Client asks for a competitor comparison. Claude in Chrome opens each competitor's site, reads their pricing, and drafts a side-by-side in 5 minutes. No copy-pasting.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="privacy-note reveal">
+      <div class="privacy-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="privacy-content">
+        <h4>A word on privacy and data</h4>
+        <p>CSMs handle confidential client data every day. Fair question: <strong>is what I paste into Claude safe?</strong></p>
+        <p>On Enterprise plans, conversations are <strong>not used to train models</strong>. Data stays within the contracted boundary. Connectors only access what you explicitly authorize, and the connection can be revoked anytime in Customize. On consumer plans, the defaults are different and worth reading before you paste anything sensitive.</p>
+        <p>The same rules that apply to Slack and email apply here: don't paste in things you wouldn't send to a colleague. For Chrome extension and Cowork specifically, start with low-stakes tasks on trusted sites before granting broader permissions.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ CHAPTER 3: PROMPTING ============ -->
+<section class="chapter" id="prompting">
+  <div class="shell">
+    <div class="chapter-head reveal">
+      <div class="chapter-number">03</div>
+      <div>
+        <div class="chapter-label">Chapter three · The art of prompting</div>
+        <h2 class="chapter-title">A better prompt beats <em>a better model.</em></h2>
+        <p class="chapter-lede">9 times out of 10, the difference between a useless answer and a ship-ready one is how you asked. This chapter: the framework, the five prompts worth memorizing, and a before-and-after that shows the difference.</p>
+      </div>
+    </div>
+
+    <h3 style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 24px;">The framework · five pieces of a great prompt</h3>
+
+    <div class="framework reveal">
+      <div class="framework-piece">
+        <div class="framework-letter">R</div>
+        <div class="framework-name">Role</div>
+        <div class="framework-desc">Who is Claude in this moment? "You are a senior CSM." "You are a global payroll expert." "You are my copy editor."</div>
+      </div>
+      <div class="framework-piece">
+        <div class="framework-letter">C</div>
+        <div class="framework-name">Context</div>
+        <div class="framework-desc">What does Claude need to know? The client, the situation, the constraint, the history. Paste it. Don't make Claude guess.</div>
+      </div>
+      <div class="framework-piece">
+        <div class="framework-letter">T</div>
+        <div class="framework-name">Task</div>
+        <div class="framework-desc">What specifically do you want? "Draft an email." "Summarize this in 5 bullets." "Rewrite the second paragraph."</div>
+      </div>
+      <div class="framework-piece">
+        <div class="framework-letter">F</div>
+        <div class="framework-name">Format</div>
+        <div class="framework-desc">What should the output look like? Word count, structure, tone, language. Specificity here saves you iteration cycles later.</div>
+      </div>
+      <div class="framework-piece">
+        <div class="framework-letter">E</div>
+        <div class="framework-name">Examples</div>
+        <div class="framework-desc">Show, don't tell. One real example of the tone or format you want is worth a paragraph of description.</div>
+      </div>
+    </div>
+
+    <p style="font-size: 15px; color: var(--muted); font-style: italic; font-family: 'Fraunces', serif; text-align: center; max-width: 720px; margin: 0 auto 60px;">Not every prompt needs all five pieces. But when a prompt isn't working, it's almost always because one of them is missing.</p>
+
+    <h3 style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 24px;">See the difference · weak prompt vs strong prompt</h3>
+
+    <div class="compare reveal">
+      <div class="compare-side weak">
+        <div class="compare-label">Weak prompt</div>
+        <div class="compare-content">"Write an email to my client about the invoice issue."</div>
+      </div>
+      <div class="compare-side strong">
+        <div class="compare-label">Strong prompt</div>
+        <div class="compare-content">You are my CSM assistant. Draft an apology email to the billing contact at one of my client accounts. Context: we double-charged their April invoice by $4,200. We've already refunded it. They noticed before we did.
+
+Tone: direct, accountable, no excuses. 100 words max. Sign off as Juan. Do not use em dashes.
+
+Example opening line I like: "I owe you a direct explanation."</div>
+      </div>
+    </div>
+
+    <p style="font-size: 15px; color: var(--muted); font-style: italic; font-family: 'Fraunces', serif; text-align: center; max-width: 720px; margin: 0 auto 80px;">The strong prompt has a role, context, task, format, and an example. It also tells Claude what not to do. You'll get a usable email on the first try.</p>
+
+    <h3 style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 24px;">Five prompts every CSM should have in their back pocket</h3>
+
+    <div class="prompt-library reveal">
+
+      <div class="prompt-card">
+        <div class="prompt-card-head">
+          <div class="prompt-card-title">01 · The escalation triage</div>
+          <div class="prompt-card-tag">When an angry email lands</div>
+        </div>
+        <div class="prompt-card-body">You are my CSM assistant. I just received this email from a client. Analyze it for me:
+
+1. What is the <em>actual</em> ask, stripped of emotion?
+2. What is the emotional temperature (1-10)?
+3. What are three possible root causes?
+4. What internal teams do I probably need to loop in?
+5. Draft a 3-sentence holding reply that buys me 24 hours without committing to anything.
+
+Email:
+[paste]</div>
+        <div class="prompt-card-note">Turns a 20-minute panic into a 30-second plan.</div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-head">
+          <div class="prompt-card-title">02 · The QBR prep</div>
+          <div class="prompt-card-tag">Before every client review</div>
+        </div>
+        <div class="prompt-card-body">You are preparing me for a QBR with [client]. Using the documents in this Project plus anything you can pull from my connected tools:
+
+1. Three biggest wins this quarter, with numbers.
+2. Two risks I need to surface, with my recommendation for each.
+3. One expansion opportunity worth pitching.
+4. The three questions the client is most likely to ask me.
+5. A one-sentence opening for the call that sets the right tone.
+
+Output as a one-page brief I can read on my phone while I walk to the meeting.</div>
+        <div class="prompt-card-note">Use inside a Project that has the client's history loaded.</div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-head">
+          <div class="prompt-card-title">03 · The pushback</div>
+          <div class="prompt-card-tag">When a client asks for too much</div>
+        </div>
+        <div class="prompt-card-body">You are my CSM copywriter. A client has asked us to [do the thing]. Our position is that we can't, because [reason]. But we can offer [alternative].
+
+Draft a reply that:
+- Acknowledges their ask without repeating it back
+- States our position firmly but warmly
+- Offers the alternative as a real solution, not a consolation prize
+- Ends with a clear next step
+- Under 120 words
+- No hedging. No "I totally understand." No em dashes.</div>
+        <div class="prompt-card-note">The "no hedging" line is what turns a good draft into a great one.</div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-head">
+          <div class="prompt-card-title">04 · The meeting debrief</div>
+          <div class="prompt-card-tag">After every client call</div>
+        </div>
+        <div class="prompt-card-body">Here are my raw notes from a client call. Turn them into:
+
+1. A 4-bullet summary for my manager.
+2. A list of action items, each with owner and deadline.
+3. The follow-up email to the client, in my voice, under 150 words.
+4. Three questions I should think about before the next call.
+
+Notes:
+[paste]</div>
+        <div class="prompt-card-note">Run this while the call is still fresh. Saves 30 minutes of "how did I word that action item again?"</div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-card-head">
+          <div class="prompt-card-title">05 · The honest review</div>
+          <div class="prompt-card-tag">Before you send anything</div>
+        </div>
+        <div class="prompt-card-body">Review this draft email as if you were the client receiving it. Be honest, not polite.
+
+Specifically:
+1. Where will they push back?
+2. What sounds like corporate hedging?
+3. What would a skeptical reader call out?
+4. What's the weakest sentence?
+5. Rewrite the weakest sentence in a stronger way.
+
+Draft:
+[paste]</div>
+        <div class="prompt-card-note">The closest thing Claude can do to a second pair of eyes. Use it before anything sensitive.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHAPTER 4: BUILDER STACK ============ -->
+<section class="chapter" id="builder">
+  <div class="shell">
+    <div class="chapter-head reveal">
+      <div class="chapter-number">04</div>
+      <div>
+        <div class="chapter-label">Chapter four · One layer up</div>
+        <h2 class="chapter-title">The builder's stack, <em>explained as a pipeline.</em></h2>
+        <p class="chapter-lede">GitHub, Vercel, Supabase, and Claude Code aren't four random tools. They're four stations on the same assembly line. You don't need to use them. You should understand how they fit together.</p>
+      </div>
+    </div>
+
+    <div class="pipeline reveal">
+      <div class="pipeline-title">How a Claude-built app actually gets built and shipped</div>
+      <div class="pipeline-flow">
+        <div class="pipeline-node">
+          <div class="pipeline-node-label">Step 1</div>
+          <div class="pipeline-node-name">Claude Code</div>
+          <div class="pipeline-node-desc">Writes the app on your laptop</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-label">Step 2</div>
+          <div class="pipeline-node-name">GitHub</div>
+          <div class="pipeline-node-desc">Stores every version of the code</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-label">Step 3</div>
+          <div class="pipeline-node-name">Vercel</div>
+          <div class="pipeline-node-desc">Runs the app at a real URL</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-label">Step 4</div>
+          <div class="pipeline-node-name">Supabase</div>
+          <div class="pipeline-node-desc">Stores the data the app uses</div>
+        </div>
+      </div>
+      <div class="pipeline-caption">Claude Code builds. GitHub remembers. Vercel hosts. Supabase stores. That's the whole pipeline.</div>
+    </div>
+
+    <div class="builder-stack reveal">
+
+      <div class="builder">
+        <div class="builder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </div>
+        <div class="builder-heading">
+          <div class="builder-name">Claude Code</div>
+          <div class="builder-tag">Where you work</div>
+        </div>
+        <div class="builder-body">
+          <p>A version of Claude that runs as a command-line tool on your laptop. Instead of copying code between a chat window and your editor, Claude reads and edits your files directly, runs commands, checks its own work, and fixes its own bugs.</p>
+          <p>You talk to it in plain English. "Build me a dashboard that pulls from this CSV." "Add a filter to the renewals page." "Fix the bug where the date is wrong." It does the work, shows you the diff, asks before doing anything destructive.</p>
+          <p>The real shift: you stop thinking in code and start thinking in requirements. You become the product manager. Claude Code is the engineer.</p>
+          <div class="analogy">The tool that turned "I'd need an engineer" into "I can do this myself."</div>
+        </div>
+      </div>
+
+      <div class="builder">
+        <div class="builder-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        </div>
+        <div class="builder-heading">
+          <div class="builder-name">GitHub</div>
+          <div class="builder-tag">Where code lives</div>
+        </div>
+        <div class="builder-body">
+          <p>A storage system for code, built for teams. Every version of every file is saved forever. You can see what changed, who changed it, and roll back if something breaks.</p>
+          <p>When Claude Code finishes a change, it commits that change to GitHub. You also get free project management: Issues for tracking bugs, Pull Requests for reviewing changes, Actions for automating things like tests.</p>
+          <p>Bonus: public GitHub profiles are becoming the new LinkedIn for builders. Shipping something good in public is a credential.</p>
+          <div class="analogy">Google Docs' version history, but for code, and far more powerful.</div>
+        </div>
+      </div>
+
+      <div class="builder">
+        <div class="builder-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 22.525H0l12-21.05z"/></svg>
+        </div>
+        <div class="builder-heading">
+          <div class="builder-name">Vercel</div>
+          <div class="builder-tag">Where the app runs</div>
+        </div>
+        <div class="builder-body">
+          <p>A hosting service that takes your GitHub code and turns it into a live, visitable website. Connect your repo once. Every push rebuilds and deploys the app in under a minute.</p>
+          <p>Every deployment gets its own unique URL, so you can share a work-in-progress with someone before it's "real." Preview links are a superpower when you want feedback without committing.</p>
+          <p>Alternatives you'll also hear: Netlify, Railway, Render, Cloudflare Pages. Same idea, different flavors.</p>
+          <div class="analogy">If GitHub is where the recipe is written, Vercel is the kitchen where it cooks.</div>
+        </div>
+      </div>
+
+      <div class="builder">
+        <div class="builder-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <div class="builder-heading">
+          <div class="builder-name">Supabase</div>
+          <div class="builder-tag">Where the data lives</div>
+        </div>
+        <div class="builder-body">
+          <p>A database as a service. Your app needs to remember things between visits: users, records, settings, history. That data lives in Supabase.</p>
+          <p>What you actually get: a real Postgres database (the same one banks use), plus user authentication, file storage, and real-time updates, all wrapped in a clean interface. You didn't need a backend engineer. Supabase is the backend.</p>
+          <p>Alternatives: Firebase (Google), Neon, PlanetScale. Supabase is the most popular right now because it plays nicely with the Claude Code workflow.</p>
+          <div class="analogy">The filing cabinet behind the app. Nothing useful works without it.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ CHAPTER 5: JARGON ============ -->
+<section class="chapter" id="jargon">
+  <div class="shell">
+    <div class="chapter-head reveal">
+      <div class="chapter-number">05</div>
+      <div>
+        <div class="chapter-label">Chapter five · The jargon</div>
+        <h2 class="chapter-title">The words people throw around, <em>translated.</em></h2>
+        <p class="chapter-lede">"Open a terminal and clone the repo." What? Here's the builder vocabulary, translated to plain English. You don't need to memorize any of it. But you'll hear these words, and knowing what they mean is a superpower.</p>
+      </div>
+    </div>
+
+    <div class="glossary reveal">
+      <div class="glossary-terms" id="glossaryTerms">
+        <div class="term active" data-term="terminal">Terminal</div>
+        <div class="term" data-term="cli">Command line</div>
+        <div class="term" data-term="repo">Repo</div>
+        <div class="term" data-term="commit">Commit</div>
+        <div class="term" data-term="push">Push &amp; Pull</div>
+        <div class="term" data-term="deploy">Deploy</div>
+        <div class="term" data-term="localhost">Localhost</div>
+        <div class="term" data-term="env">Environment</div>
+        <div class="term" data-term="api">API</div>
+        <div class="term" data-term="frontend">Frontend / Backend</div>
+        <div class="term" data-term="framework">Framework</div>
+        <div class="term" data-term="package">Package</div>
+        <div class="term" data-term="mcp">MCP</div>
+        <div class="term" data-term="prompt">Prompt</div>
+        <div class="term" data-term="artifact">Artifact</div>
+        <div class="term" data-term="hallucination">Hallucination</div>
+      </div>
+      <div class="glossary-def" id="glossaryDef">
+        <div class="def-kicker">Definition 01 of 16</div>
+        <div class="def-term">Terminal</div>
+        <div class="def-body">
+          <p>A <strong>text-based window</strong> where you type commands instead of clicking buttons. Every computer has one. On a Mac it's called Terminal, on Windows it's PowerShell or Command Prompt.</p>
+          <p>It looks intimidating (black background, blinking cursor), but it's just a different way to talk to your computer. Click a folder with your mouse, or type <code>cd folder-name</code> in the terminal. Same thing, different interface.</p>
+          <div class="def-example">You open Terminal. You type: claude. Claude Code starts a session right there in the window.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHAPTER 6: OTHER AI TOOLS ============ -->
+<section class="chapter" id="tools">
+  <div class="shell">
+    <div class="chapter-head reveal">
+      <div class="chapter-number">06</div>
+      <div>
+        <div class="chapter-label">Chapter six · Beyond Claude</div>
+        <h2 class="chapter-title">Other AI tools <em>worth knowing about.</em></h2>
+        <p class="chapter-lede">You already know ChatGPT and Gemini. Let's skip those. Here are the tools that are less famous but worth knowing, organized by what they actually do better than Claude.</p>
+      </div>
+    </div>
+
+    <div class="tools-grid reveal">
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Cursor</span>
+        </div>
+        <div class="tool-category">Code editor · AI-native</div>
+        <div class="tool-desc">A code editor built around AI from the ground up. If you're coding a lot, this is the tool that makes you feel superhuman. Uses Claude under the hood as one of its models.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You start building internal tools regularly and Claude Code in the terminal isn't enough. Graduation level.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Lovable</span>
+        </div>
+        <div class="tool-category">No-code app builder</div>
+        <div class="tool-desc">Describe the app you want. Lovable builds it, deploys it, and gives you a working URL. No coding required at all. Perfect for prototypes before you commit engineering time.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You have an idea for an internal tool and want to show it to Ops or Engineering as a working demo, not a mockup.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Perplexity</span>
+        </div>
+        <div class="tool-category">Research · answer engine</div>
+        <div class="tool-desc">An AI search engine with real-time citations. Every claim comes with sources. Tough on hallucinations, strong on current events.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>Researching a prospect, verifying a fact for a client email, or tracking recent news about an account.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">NotebookLM</span>
+        </div>
+        <div class="tool-category">Research · Google</div>
+        <div class="tool-desc">Load 5-50 documents, and ask questions that only pull from those sources. Great for deep-diving a set of materials without contamination from the open web.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You have a folder of contracts, meeting notes, or competitor docs and need to synthesize insight from just those.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Gamma</span>
+        </div>
+        <div class="tool-category">Presentations · AI deck builder</div>
+        <div class="tool-desc">Generates polished slide decks from a prompt or a document. You describe the deck, Gamma lays it out. Fast, clean, not infinitely customizable.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You need a QBR deck in 10 minutes and don't have time to fight PowerPoint.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Synthesia</span>
+        </div>
+        <div class="tool-category">AI video · avatars</div>
+        <div class="tool-desc">Turn any script or document into a video with a realistic AI avatar presenter. 140+ languages, no cameras, no studio. Dominant in corporate training and business video.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You want to send a client an explainer video, localize onboarding in multiple languages, or record a "from me" update at scale.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">ElevenLabs</span>
+        </div>
+        <div class="tool-category">AI voice · cloning &amp; TTS</div>
+        <div class="tool-desc">The gold standard for realistic AI voice. Can clone your voice from 30 seconds of audio. Generates natural-sounding speech in 70+ languages with emotional nuance.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You want an audio version of a doc, a voice message that sounds like you, or a voice agent for a support workflow.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Kimi</span>
+        </div>
+        <div class="tool-category">Open-weight model · Moonshot</div>
+        <div class="tool-desc">A strong open-source AI model from China, free to download and run. Benchmarks competitively with the leading proprietary models on reasoning and coding.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You're curious about the open-source landscape. Less relevant for daily CSM work. Worth knowing the name.</div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-header">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Manus</span>
+        </div>
+        <div class="tool-category">Autonomous agent</div>
+        <div class="tool-desc">An autonomous AI agent that can browse the web, code, and manage files end-to-end without constant prompting. Still invite-only. Impressive on structured tasks, fragile on ambiguous ones.</div>
+        <div class="tool-use"><strong>Reach for it when</strong>You're experimenting with "give AI a goal and walk away" workflows. Not yet reliable enough for client-facing work.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLOSE ============ -->
+<section class="chapter close-section" id="close">
+  <div class="shell">
+    <div class="chapter-head reveal">
+      <div class="chapter-number">07</div>
+      <div>
+        <div class="chapter-label">Chapter seven · A few cautions</div>
+        <h2 class="chapter-title">Where Claude <em>doesn't belong.</em></h2>
+        <p class="chapter-lede">A short list of moments where the right answer is still a human one. Save yourself the lesson of learning these the hard way.</p>
+      </div>
+    </div>
+
+    <div class="warning-block reveal" style="margin-top: 0;">
+      <div class="warning-kicker">Before you get too excited</div>
+      <h2 class="warning-title">Some things Claude should <em>never</em> do for you.</h2>
+      <ul class="warning-list">
+        <li><strong>Compensation or commission decisions</strong> without a human reviewing the output. Claude can do the math; you own the judgment.</li>
+        <li><strong>Client-facing messages sent without being read first.</strong> Draft with Claude, send as yourself. Never auto-send.</li>
+        <li><strong>HR-sensitive matters as the primary tool.</strong> Terminations, disputes, grievances go to People Ops, not an AI draft.</li>
+        <li><strong>Replace direct conversations with important stakeholders.</strong> If a client deserves a call, give them the call. Don't hide behind a polished email.</li>
+        <li><strong>Store credentials, API keys, or PII</strong> in chat history. It's not a vault. Treat conversations like shared notes.</li>
+        <li><strong>Legal, tax, or compliance sign-off</strong> on anything regulated. Claude drafts. Legal approves. That order, always.</li>
+      </ul>
+    </div>
+
+    <div class="footer-meta">
+      <span>CLAUDE FOR CSMs · A GUIDED TOUR</span>
+      <span>JUAN CORREA · 2026</span>
+      <span>THE SKILL ISN'T USING AI. IT'S KNOWING WHEN TO.</span>
+    </div>
+  </div>
+</section>
+
+<script>
+  function toggleFeature(header) {
+    const feature = header.parentElement;
+    document.querySelectorAll('.feature.open').forEach(f => {
+      if (f !== feature) f.classList.remove('open');
+    });
+    feature.classList.toggle('open');
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  document.querySelector('.feature').classList.add('open');
+
+  // ===== Glossary interaction =====
+  const definitions = {
+    terminal: {
+      term: "Terminal",
+      body: `<p>A <strong>text-based window</strong> where you type commands instead of clicking buttons. Every computer has one. On a Mac it's called Terminal, on Windows it's PowerShell or Command Prompt.</p>
+             <p>It looks intimidating (black background, blinking cursor), but it's just a different way to talk to your computer. Click a folder with your mouse, or type <code>cd folder-name</code> in the terminal. Same thing, different interface.</p>
+             <div class="def-example">You open Terminal. You type: claude. Claude Code starts a session right there in the window.</div>`
+    },
+    cli: {
+      term: "Command line",
+      body: `<p>The same thing as <strong>terminal</strong>, basically. "Command line" describes the interface (a line where you type commands), "terminal" describes the app that shows it. People use the two words interchangeably.</p>
+             <p>You'll also see <strong>CLI</strong>, which stands for "command-line interface." A CLI tool is one you run by typing commands. Claude Code is a CLI tool.</p>
+             <div class="def-example">"Claude Code is a CLI" just means you use it by typing in the terminal, not by clicking in a window.</div>`
+    },
+    repo: {
+      term: "Repo",
+      body: `<p>Short for <strong>repository</strong>. A folder of code that lives on GitHub. Every project has one repo, and that repo holds every file and every version of those files.</p>
+             <p>When someone says "clone the repo," they mean "download a copy of this project to your computer." When they say "push to the repo," they mean "send your changes back to GitHub."</p>
+             <div class="def-example">A typical CSM-built tool might live at a URL like github.com/your-username/your-project-name. That whole thing is a repo.</div>`
+    },
+    commit: {
+      term: "Commit",
+      body: `<p>A <strong>saved snapshot</strong> of your code at a point in time, with a little note describing what changed. Every commit is permanent. You can always go back to any commit.</p>
+             <p>Think of it like saving a version of a Google Doc, but with a mandatory comment explaining what you did: "Added the login page." "Fixed the email bug." "Changed the colors."</p>
+             <div class="def-example">After Claude Code makes a change, it commits it. A month later you can see exactly what changed and when.</div>`
+    },
+    push: {
+      term: "Push & Pull",
+      body: `<p>Two directions of the same highway between your laptop and GitHub.</p>
+             <p><strong>Push:</strong> send your local changes up to GitHub. You worked on your laptop, now GitHub has the latest version too.</p>
+             <p><strong>Pull:</strong> bring down changes from GitHub to your laptop. Someone else made changes, now you have them.</p>
+             <div class="def-example">You push your work at the end of the day. Tomorrow, you pull to see if a colleague added anything.</div>`
+    },
+    deploy: {
+      term: "Deploy",
+      body: `<p>To <strong>make something live</strong> on the internet so people can actually use it. Deploying a website means putting it on a server so anyone with the URL can visit.</p>
+             <p>With Vercel, deploying happens automatically. You push code to GitHub, Vercel sees the push, deploys the new version, and the site is updated in under a minute.</p>
+             <div class="def-example">"It's deployed" = the new feature is live and users can see it. "It's not deployed yet" = still just on your laptop.</div>`
+    },
+    localhost: {
+      term: "Localhost",
+      body: `<p>A <strong>private website only you can see</strong>, running on your own laptop. Usually at an address like <code>localhost:3000</code>.</p>
+             <p>Before you deploy a site to the world, you run it on localhost to test it. It's the developer equivalent of a rehearsal: everything works like the real thing, but only you are in the room.</p>
+             <div class="def-example">Claude Code says "Server running at localhost:3000." You open that in your browser and see your app running, just on your computer.</div>`
+    },
+    env: {
+      term: "Environment (.env)",
+      body: `<p>A <strong>secret settings file</strong> that holds passwords, API keys, and configuration values your app needs to run. Never shared, never pushed to GitHub.</p>
+             <p>You'll see files called <code>.env</code> or "environment variables." Those are places where the sensitive stuff lives, kept separate from the regular code so it doesn't accidentally get published.</p>
+             <div class="def-example">Your Supabase password goes in .env. The code reads from there. The file never leaves your laptop.</div>`
+    },
+    api: {
+      term: "API",
+      body: `<p><strong>Application Programming Interface.</strong> A menu of things one piece of software can ask another piece of software to do.</p>
+             <p>When Claude reads your CRM data through a connector, it's using that CRM's API. The API is the language the two systems speak to each other. You never see it directly.</p>
+             <div class="def-example">Every time your app needs data from somewhere else, it's using an API. HubSpot has an API. Gmail has an API. Most modern apps have one.</div>`
+    },
+    frontend: {
+      term: "Frontend / Backend",
+      body: `<p><strong>Frontend:</strong> the part of the app you see and click. Buttons, pages, forms, colors. Runs in your browser.</p>
+             <p><strong>Backend:</strong> the part of the app you don't see. Databases, logic, calculations, permissions. Runs on a server somewhere.</p>
+             <p>Most apps have both. A renewal dashboard's frontend shows the table and the charts. Its backend pulls data from a database and does the math.</p>
+             <div class="def-example">Claude Code can build both. When someone says "frontend developer," they mean someone who makes the part users see.</div>`
+    },
+    framework: {
+      term: "Framework",
+      body: `<p>A <strong>pre-built scaffolding</strong> for making apps. Instead of writing everything from scratch, you start with a framework that already has common pieces solved.</p>
+             <p>Next.js is a framework. React is a framework. They handle boring plumbing so you can focus on what makes your app different.</p>
+             <div class="def-example">"It's a Next.js app" = it uses the Next.js framework. You don't need to know more than that.</div>`
+    },
+    package: {
+      term: "Package",
+      body: `<p>A <strong>reusable chunk of code</strong> someone else wrote that you can add to your app. Need a calendar? Install a calendar package. Need a chart? Install a chart package.</p>
+             <p>Most apps use dozens or hundreds of packages. "npm install" is the command that adds one. A <code>package.json</code> file lists everything your app uses.</p>
+             <div class="def-example">Claude Code handles package management for you. It adds what's needed, removes what's not. You rarely have to think about it.</div>`
+    },
+    mcp: {
+      term: "MCP",
+      body: `<p><strong>Model Context Protocol.</strong> An open standard Anthropic released in late 2024 that lets any AI assistant plug into any app.</p>
+             <p>Think USB. Before USB, every device had its own weird plug. Now everything uses the same port. MCP is USB for AI.</p>
+             <p>When you connect a tool to Claude, you're using MCP under the hood. You'll hear this word a lot in 2026.</p>
+             <div class="def-example">"MCP server" = the app-side of the connection. The app runs one. You never see it. It just works.</div>`
+    },
+    prompt: {
+      term: "Prompt",
+      body: `<p>What you type into Claude. The instruction.</p>
+             <p>Good prompts have structure: a role (who Claude is), material (what you're giving it), outputs (what you want back), tone, and length.</p>
+             <p>A better prompt beats a better model, 9 times out of 10. Writing good prompts is the single highest-leverage AI skill.</p>
+             <div class="def-example">Weak prompt: "Write an email." Strong prompt: "Draft a 100-word email to my client apologizing for the invoice error, offering a credit, and proposing a call Thursday."</div>`
+    },
+    artifact: {
+      term: "Artifact",
+      body: `<p>A file or mini-app Claude generates next to the chat. Documents, decks, PDFs, dashboards, interactive tools, charts.</p>
+             <p>Artifacts are iterative. You can ask Claude to refine them in place: "Make the summary shorter." "Change the color scheme." "Add a chart."</p>
+             <div class="def-example">Everything you produce for a client that isn't just a chat response is probably an artifact.</div>`
+    },
+    hallucination: {
+      term: "Hallucination",
+      body: `<p>When an AI makes something up that sounds true but isn't. A fabricated citation. An invented statistic. A non-existent contact.</p>
+             <p>Modern Claude hallucinates far less than earlier AI models, especially with connectors turned on (real data beats guessing).</p>
+             <div class="def-example">Always verify facts, especially numbers and names, before putting them in front of a client. One hallucination can cost you a deal.</div>`
+    }
+  };
+
+  const glossaryDef = document.getElementById('glossaryDef');
+  const glossaryTermsContainer = document.getElementById('glossaryTerms');
+  const allTerms = document.querySelectorAll('.term');
+  const totalTerms = allTerms.length;
+
+  allTerms.forEach((el, idx) => {
+    el.addEventListener('click', () => {
+      allTerms.forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      const key = el.dataset.term;
+      const def = definitions[key];
+      const num = String(idx + 1).padStart(2, '0');
+      const total = String(totalTerms).padStart(2, '0');
+      glossaryDef.innerHTML = `
+        <div class="def-kicker">Definition ${num} of ${total}</div>
+        <div class="def-term">${def.term}</div>
+        <div class="def-body">${def.body}</div>
+      `;
+      glossaryDef.style.opacity = '0';
+      glossaryDef.style.transform = 'translateY(6px)';
+      requestAnimationFrame(() => {
+        glossaryDef.style.opacity = '1';
+        glossaryDef.style.transform = 'translateY(0)';
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
